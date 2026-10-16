@@ -19,6 +19,10 @@
 package org.apache.maven.shared.scriptinterpreter;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
+import java.nio.file.Path;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
@@ -28,6 +32,7 @@ import org.junit.jupiter.api.io.TempDir;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -94,6 +99,28 @@ public class FileLoggerTest {
 
         assertTrue(outputFile.exists());
         assertEquals(EXPECTED_LOG, new String(Files.readAllBytes(outputFile.toPath()), StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void consumeLineReportsOutputFailures(@TempDir File tempDir) throws Exception {
+        File outputFile = new File(tempDir, "failing.log");
+        FileLogger fileLogger = new FileLogger(outputFile) {
+            @Override
+            protected OutputStream createOutputStream(Path outputPath) {
+                return new OutputStream() {
+                    @Override
+                    public void write(int b) throws IOException {
+                        throw new IOException("simulated write failure");
+                    }
+                };
+            }
+        };
+
+        try (FileLogger logger = fileLogger) {
+            UncheckedIOException exception =
+                    assertThrows(UncheckedIOException.class, () -> logger.consumeLine("failure"));
+            assertEquals("simulated write failure", exception.getCause().getMessage());
+        }
     }
 
     @Test
