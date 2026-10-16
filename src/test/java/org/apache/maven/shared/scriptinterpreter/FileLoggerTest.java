@@ -102,6 +102,20 @@ public class FileLoggerTest {
     }
 
     @Test
+    void outputStreamApiWritesToFile(@TempDir File tempDir) throws Exception {
+        File outputFile = new File(tempDir, "output-stream.log");
+
+        try (FileLogger fileLogger = new FileLogger(outputFile)) {
+            fileLogger.getOutputStream().write("OutputStream API\\n".getBytes(StandardCharsets.UTF_8));
+            fileLogger.getOutputStream().flush();
+        }
+
+        assertEquals(
+                "OutputStream API\\n",
+                new String(Files.readAllBytes(outputFile.toPath()), StandardCharsets.UTF_8));
+    }
+
+    @Test
     void consumeLineReportsOutputFailures(@TempDir File tempDir) throws Exception {
         File outputFile = new File(tempDir, "failing.log");
         FileLogger fileLogger = new FileLogger(outputFile) {
