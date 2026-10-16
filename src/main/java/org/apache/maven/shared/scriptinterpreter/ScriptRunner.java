@@ -257,7 +257,8 @@ public class ScriptRunner implements Closeable {
             if (out != null) {
                 t.printStackTrace(out);
                 if (out.checkError()) {
-                    throw new IOException("Failed to write script output while reporting an error for " + scriptFile, e);
+                    throw new IOException(
+                            "Failed to write script output while reporting an error for " + scriptFile, e);
                 }
             }
             throw e;
