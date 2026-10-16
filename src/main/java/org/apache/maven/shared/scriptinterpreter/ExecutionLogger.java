@@ -18,6 +18,7 @@
  */
 package org.apache.maven.shared.scriptinterpreter;
 
+import java.io.OutputStream;
 import java.io.PrintStream;
 
 /**
@@ -31,7 +32,19 @@ public interface ExecutionLogger {
      *
      * @return the output stream
      */
+    @Deprecated
     PrintStream getPrintStream();
+
+    /**
+     * Gets the output stream used to capture script output.
+     *
+     * <p>Implementations should override this method to expose an output stream that reports I/O failures.
+     *
+     * @return the output stream
+     */
+    default OutputStream getOutputStream() {
+        return getPrintStream();
+    }
 
     /**
      * Consume logging from this component.
