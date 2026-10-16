@@ -230,12 +230,13 @@ public class ScriptRunner implements Closeable {
         }
 
         Object result;
+        PrintStream out = (logger != null)
+                ? new PrintStream(logger.getOutputStream(), false, StandardCharsets.UTF_8.name())
+                : null;
         try {
             if (logger != null) {
                 logger.consumeLine("Running " + scriptDescription + ": " + scriptFile);
             }
-
-            PrintStream out = (logger != null) ? logger.getPrintStream() : null;
 
             Map<String, Object> scriptVariables = new HashMap<>(this.globalVariables);
             scriptVariables.put("basedir", basedir);
@@ -245,13 +246,19 @@ public class ScriptRunner implements Closeable {
             synchronized (LOCK) {
                 result = interpreter.evaluateScript(script, scriptVariables, out);
             }
+            if (out != null && out.checkError()) {
+                throw new IOException("Failed to write script output for " + scriptFile);
+            }
             if (logger != null) {
                 logger.consumeLine("Finished " + scriptDescription + ": " + scriptFile);
             }
         } catch (ScriptEvaluationException e) {
             Throwable t = (e.getCause() != null) ? e.getCause() : e;
-            if (logger != null) {
-                t.printStackTrace(logger.getPrintStream());
+            if (out != null) {
+                t.printStackTrace(out);
+                if (out.checkError()) {
+                    throw new IOException("Failed to write script output while reporting an error for " + scriptFile, e);
+                }
             }
             throw e;
         }
