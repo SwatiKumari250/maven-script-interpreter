@@ -110,6 +110,7 @@ public class FileLogger implements ExecutionLogger, AutoCloseable {
      * Gets the underlying stream used to write message to the log file.
      *
      * @return The underlying stream used to write message to the log file, never <code>null</code>.
+     * @deprecated Use {@link #getOutputStream()} instead.
      */
     @Override
     @Deprecated
