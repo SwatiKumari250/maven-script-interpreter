@@ -31,6 +31,7 @@ public interface ExecutionLogger {
      * The stream which will catch the output of the {@link org.apache.maven.shared.scriptinterpreter.ScriptRunner}.
      *
      * @return the output stream
+     * @deprecated Use {@link #getOutputStream()} instead.
      */
     @Deprecated
     PrintStream getPrintStream();
