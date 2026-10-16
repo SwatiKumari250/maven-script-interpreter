@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.OpenOption;
@@ -41,7 +42,9 @@ public class FileLogger implements ExecutionLogger, AutoCloseable {
     /**
      * The underlying file stream this logger writes to.
      */
-    private PrintStream stream;
+    private OutputStream outputStream;
+
+    private PrintStream printStream;
 
     /**
      * Creates a new logger that writes to the specified file.
@@ -77,11 +80,11 @@ public class FileLogger implements ExecutionLogger, AutoCloseable {
         }
 
         if (mirrorHandler != null) {
-            this.stream = new PrintStream(
-                    new MirrorStreamWrapper(outputStream, mirrorHandler), false, StandardCharsets.UTF_8.name());
+            this.outputStream = new MirrorStreamWrapper(outputStream, mirrorHandler);
         } else {
-            this.stream = new PrintStream(new LineFeedNormalizer(outputStream), false, StandardCharsets.UTF_8.name());
+            this.outputStream = new LineFeedNormalizer(outputStream);
         }
+        this.printStream = new PrintStream(this.outputStream, false, StandardCharsets.UTF_8.name());
     }
 
     /**
@@ -109,8 +112,19 @@ public class FileLogger implements ExecutionLogger, AutoCloseable {
      * @return The underlying stream used to write message to the log file, never <code>null</code>.
      */
     @Override
+    @Deprecated
     public PrintStream getPrintStream() {
-        return stream;
+        return printStream;
+    }
+
+    /**
+     * Gets the output stream used to write messages to the log file.
+     *
+     * @return the output stream used to write messages to the log file, never {@code null} while open.
+     */
+    @Override
+    public OutputStream getOutputStream() {
+        return outputStream;
     }
 
     /**
@@ -123,19 +137,23 @@ public class FileLogger implements ExecutionLogger, AutoCloseable {
      */
     @Override
     public void consumeLine(String line) {
-        stream.print(line);
-        stream.print('\n');
-        stream.flush();
+        try {
+            outputStream.write(line.getBytes(StandardCharsets.UTF_8));
+            outputStream.write('\n');
+            outputStream.flush();
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to write log output", e);
+        }
     }
 
     /**
      * Closes the underlying file stream.
      */
-    public void close() {
-        if (stream != null) {
-            stream.flush();
-            stream.close();
-            stream = null;
+    public void close() throws IOException {
+        if (outputStream != null) {
+            outputStream.close();
+            outputStream = null;
+            printStream = null;
         }
     }
 
