@@ -106,12 +106,12 @@ public class FileLoggerTest {
         File outputFile = new File(tempDir, "output-stream.log");
 
         try (FileLogger fileLogger = new FileLogger(outputFile)) {
-            fileLogger.getOutputStream().write("OutputStream API\\n".getBytes(StandardCharsets.UTF_8));
+            fileLogger.getOutputStream().write("OutputStream API\n".getBytes(StandardCharsets.UTF_8));
             fileLogger.getOutputStream().flush();
         }
 
         assertEquals(
-                "OutputStream API\\n",
+                "OutputStream API\n",
                 new String(Files.readAllBytes(outputFile.toPath()), StandardCharsets.UTF_8));
     }
 
